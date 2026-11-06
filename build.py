@@ -1,7 +1,8 @@
 """Generate the Explore Moz static catalogue."""
 from html import escape
 from pathlib import Path
-import json, shutil
+import shutil
+from sections import publish_sections
 
 places = [
  ("maputo","Maputo","Cidade de Maputo","Cultura","Culture","Arquitectura, mercados e sabores à beira da baía.","Architecture, markets and flavours by the bay.",-25.97,32.57,"Explore a Baixa, a estação ferroviária e os espaços culturais da cidade.","Explore downtown, the railway station and the city's cultural spaces.","city"),
@@ -57,8 +58,17 @@ for en in (False,True):
     categories="".join(f'<button data-category-filter="{label}" aria-pressed="false" type="button">{label}</button>' for label in [t("Praia","Beach"),t("Natureza","Nature"),t("Cultura","Culture")])
     title=t("Moçambique começa aqui.","Mozambique starts here.")
     desc=t("Descubra destinos, inspire-se com novas experiências e planeie a sua próxima viagem por Moçambique.","Discover destinations, find inspiration and plan your next trip across Mozambique.")
+    discovery = publish_sections(en, prefix, other, places, page, save, art)
     body=f"""<section class="hero" id="top"><div class="scene" aria-hidden="true">{art("sea")}</div><div class="hero-copy"><small>{t("GUIA DE VIAGEM · MOÇAMBIQUE","TRAVEL GUIDE · MOZAMBIQUE")}</small><h1>{title}</h1><p>{desc}</p><a class="primary" href="#catalog">{t("Explorar destinos","Explore destinations")} ↘</a></div></section>
+{discovery}
 <section class="section" id="catalog"><div class="section-title"><div><small>{t("ESCOLHA O SEU PRÓXIMO DESTINO","FIND YOUR NEXT DESTINATION")}</small><h2>{t("O que gostaria de explorar?","What would you like to explore?")}</h2></div><a href="#map">{t("Ver mapa","View map")} ↗</a></div><div class="filters"><label>{t("Pesquisar destinos","Search destinations")}<input id="search" type="search" placeholder="{t('Ex. Vilankulo','E.g. Vilankulo')}"></label><label>{t("Província","Province")}<select id="province"><option value="">{t("Todas","All")}</option>{provinces}</select></label></div><div class="chips"><button data-category-filter="" aria-pressed="true" type="button">{t("Todos","All")}</button>{categories}<button id="favorites" aria-pressed="false" type="button">♡ {t("Favoritos","Favourites")}</button></div><p id="results" role="status"></p><div class="cards">{''.join(cards)}</div></section>
 <section id="map" class="section map-section"><div><small>{t("DO LITORAL AO INTERIOR","FROM COAST TO INLAND")}</small><h2>{t("Explore pelo mapa","Explore on the map")}</h2><p>{t("Seleccione um ponto para abrir o guia do destino. O esquema acompanha os filtros do catálogo.","Select a marker to open its destination guide. The schematic follows the catalogue filters.")}</p><p><small>{t("Mapa esquemático · Localizações aproximadas","Schematic map · Approximate locations")}</small></p></div><div class="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M59 9 90 6 87 29 75 40 60 43 46 53 42 67 26 78 23 92 15 92 13 79 21 68 18 53 27 43 3 31 11 27 40 34 49 23 50 13Z" fill="#abc6a2" stroke="#305f52" stroke-width=".5"/></svg>{''.join(pins)}</div></section>
 <section class="section planner" id="planner"><div><small>{t("MINHA VIAGEM","MY TRIP")}</small><h2>{t("Da inspiração ao itinerário","From inspiration to itinerary")}</h2><p>{t("Guarde um plano neste dispositivo e leve uma cópia consigo.","Save a plan on this device and take a copy with you.")}</p></div><form id="trip"><label>{t("Origem","Starting point")}<input name="origin" required maxlength="100"></label><label>{t("Destino","Destination")}<select name="destination">{''.join(options)}</select></label><label>{t("Chegada","Arrival")}<input name="arrival" type="date" required></label><label>{t("Partida","Departure")}<input name="departure" type="date" required></label><label>{t("Pessoas","Travellers")}<input name="people" type="number" min="1" max="100" value="2" required></label><button class="primary" type="submit">{t("Guardar itinerário","Save itinerary")}</button></form><div id="trip-result" role="status"></div><button id="download" type="button" hidden>{t("Descarregar itinerário","Download itinerary")}</button></section>"""
     save(Path(prefix),page(title,desc,body,en,other))
+
+from xml.sax.saxutils import escape as xml_escape
+base_url = "https://exploremoz.vercel.app"
+urls = sorted(base_url + "/" + path.relative_to(out).as_posix().removesuffix("index.html") for path in out.rglob("index.html"))
+entries = "".join("<url><loc>" + xml_escape(url.rstrip("/") + "/") + "</loc></url>" for url in urls)
+(out / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + entries + "</urlset>", encoding="utf-8")
+(out / "robots.txt").write_text("User-agent: *\nAllow: /\nSitemap: " + base_url + "/sitemap.xml\n", encoding="utf-8")
