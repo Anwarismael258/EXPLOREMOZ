@@ -1,3 +1,5 @@
+from photography import PHOTOS, photo
+
 # Editorial navigation for the public catalogue.
 SECTIONS = [
  ("alojamento", "Onde ficar", "Where to stay", "Compare tipos de alojamento e escolha uma região para a sua base.", "Compare accommodation types and choose a region to base yourself.", [
@@ -47,7 +49,9 @@ def publish_sections(en, prefix, other, places, page, save, art):
         suggestions = []
         for idea, idea_en, destination in ideas:
             item = index[destination]
-            suggestions.append(f'<article class="card"><div class="cover">{art(item[-1])}</div><div class="card-content"><small>{item[1]}</small><h3><a href="/{prefix}destinos/{destination}/">{t(idea, idea_en)} →</a></h3><p>{t(item[5], item[6])}</p></div></article>')
-        body = f"""<section class="detail" id="top"><a href="/{prefix}#discover">← {t('Explorar categorias','Explore categories')}</a><h1 class="section-heading">{title}</h1><p class="intro">{description}</p><h2>{t('Ideias para a viagem','Trip ideas')}</h2><div class="cards">{''.join(suggestions)}</div><p class="editorial-note">{t('Guias de inspiração. Confirme preços, datas e disponibilidade com o operador antes de viajar.','Ideas for your trip. Confirm prices, dates and availability with the operator before travelling.')}</p><a class="primary" href="/{prefix}#planner">{t('Planear viagem','Plan a trip')} →</a></section>"""
+            photo_slug = {("alojamento", "maputo"): "polana", ("transporte", "maputo"): "katembe"}.get((slug, destination), destination)
+            visual = photo(photo_slug, en) if photo_slug in PHOTOS else art(item[-1])
+            suggestions.append(f'<article class="card"><div class="cover">{visual}</div><div class="card-content"><small>{item[1]}</small><h3><a href="/{prefix}destinos/{destination}/">{t(idea, idea_en)} →</a></h3><p>{t(item[5], item[6])}</p></div></article>')
+        body = f"""<section class="detail" id="top"><a href="/{prefix}#discover">← {t('Explorar categorias','Explore categories')}</a><h1 class="section-heading">{title}</h1><p class="intro">{description}</p><h2>{t('Ideias para a viagem','Trip ideas')}</h2><div class="cards">{''.join(suggestions)}</div><p class="editorial-note">{t('Guias de inspiração. Confirme preços, datas e disponibilidade com o operador antes de viajar.','Ideas for your trip. Confirm prices, dates and availability with the operator before travelling.')}</p><a class="primary" href="/{prefix}#planner">{t('Planear viagem','Plan a trip')} →</a> <a href="/{prefix}#fotografias">{t('Créditos das fotografias','Photo credits')}</a></section>"""
         save(f"{prefix}{slug}", page(title, description, body, en, f"{other}{slug}/"))
     return f'<section class="section" id="discover"><small>{t("EXPLORE POR INTERESSE","EXPLORE BY INTEREST")}</small><h2>{t("Tudo começa com uma ideia","It all starts with an idea")}</h2><div class="cards">{"".join(cards)}</div></section>'

@@ -107,3 +107,28 @@ if (form) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 }
+
+const heroVideo = document.querySelector("#hero-video");
+const videoToggle = document.querySelector("#hero-video-toggle");
+if (heroVideo && videoToggle) {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  function updateVideoButton() {
+    videoToggle.textContent = heroVideo.paused ? videoToggle.dataset.play : videoToggle.dataset.pause;
+  }
+  function startVideo() {
+    if (!heroVideo.hasAttribute("src")) heroVideo.src = heroVideo.dataset.src;
+    heroVideo.play().catch(updateVideoButton);
+  }
+  videoToggle.hidden = false;
+  videoToggle.addEventListener("click", () => {
+    if (heroVideo.paused) startVideo();
+    else heroVideo.pause();
+  });
+  heroVideo.addEventListener("playing", updateVideoButton);
+  heroVideo.addEventListener("pause", updateVideoButton);
+  reduceMotion.addEventListener("change", event => { if (event.matches) heroVideo.pause(); });
+  if (!reduceMotion.matches && !navigator.connection?.saveData &&
+      !["slow-2g", "2g", "3g"].includes(navigator.connection?.effectiveType)) {
+    window.addEventListener("load", startVideo, {once: true});
+  }
+}

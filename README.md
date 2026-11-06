@@ -1,6 +1,6 @@
 # Explore Moz
 
-Catálogo turístico bilingue com páginas estáticas, pesquisa, filtros, mapa esquemático, favoritos e planeador local. O catálogo editorial está em `build.py`. As ilustrações são vectoriais.
+Catálogo turístico bilingue com páginas estáticas, pesquisa, filtros, mapa esquemático, favoritos e planeador local. O catálogo editorial está em `build.py`. O catálogo combina fotografia creditada e ilustrações vectoriais.
 
 ## Executar
 

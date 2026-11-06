@@ -3,6 +3,7 @@ from html import escape
 from pathlib import Path
 import shutil
 from sections import publish_sections
+from photography import PHOTOS, gallery, photo
 
 places = [
  ("maputo","Maputo","Cidade de Maputo","Cultura","Culture","Arquitectura, mercados e sabores à beira da baía.","Architecture, markets and flavours by the bay.",-25.97,32.57,"Explore a Baixa, a estação ferroviária e os espaços culturais da cidade.","Explore downtown, the railway station and the city's cultural spaces.","city"),
@@ -33,6 +34,8 @@ out = Path("dist")
 out.mkdir(exist_ok=True)
 for file in ("style.css","app.js","icon.svg"):
     shutil.copyfile(file,out/file)
+shutil.copytree("media", out / "media", dirs_exist_ok=True)
+
 def save(path, html):
     target=out/path/"index.html"
     target.parent.mkdir(parents=True,exist_ok=True)
@@ -51,15 +54,18 @@ for en in (False,True):
         href=f"/{prefix}destinos/{slug}/"
         options.append(f'<option value="{slug}">{name}</option>')
         pins.append(f'<a href="{href}" data-pin="{slug}" style="--x:{(lon-30)*7.3:.2f}%;--y:{(-lat-10)*5.25:.2f}%" title="{name}" aria-label="{name}"><span></span></a>')
-        cards.append(f'<article class="card" data-id="{slug}" data-category="{category}" data-province="{province}"><a href="{href}" class="cover" tabindex="-1" aria-hidden="true">{art(kind)}</a><div class="card-content"><small>{province} · {category}</small><h3><a href="{href}">{name}</a></h3><p>{summary}</p><button class="save" type="button" data-save="{slug}" aria-pressed="false" aria-label="{t("Guardar","Save")} {name}">♡</button></div></article>')
-        body=f"""<section class="detail" id="top"><a href="/{prefix}#catalog">← {t('Todos os destinos','All destinations')}</a><div class="detail-grid"><div><small>{province} · {category}</small><h1>{name}</h1><p class="intro">{summary}</p><button class="primary" data-save="{slug}" aria-pressed="false">{t('Guardar nos favoritos','Save to favourites')}</button></div><div class="detail-art">{art(kind)}</div></div></section><section class="guide"><h2>{t('O que explorar','What to explore')}</h2><p>{t(guide,guide_en)}</p><h2>{t('Localização','Location')}</h2><a href="https://www.openstreetmap.org/?mlat={lat}&amp;mlon={lon}#map=10/{lat}/{lon}">{t('Ver no OpenStreetMap ↗','View on OpenStreetMap ↗')}</a><p><a href="/{prefix}#planner">{t('Abrir planeador de viagem →','Open trip planner →')}</a></p></section>"""
+        cover = photo(slug, en) if slug in PHOTOS else art(kind)
+        cards.append(f'<article class="card" data-id="{slug}" data-category="{category}" data-province="{province}"><a href="{href}" class="cover" tabindex="-1" aria-hidden="true">{cover}</a><div class="card-content"><small>{province} · {category}</small><h3><a href="{href}">{name}</a></h3><p>{summary}</p><button class="save" type="button" data-save="{slug}" aria-pressed="false" aria-label="{t("Guardar","Save")} {name}">♡</button></div></article>')
+        body=f"""<section class="detail" id="top"><a href="/{prefix}#catalog">← {t('Todos os destinos','All destinations')}</a><div class="detail-grid"><div><small>{province} · {category}</small><h1>{name}</h1><p class="intro">{summary}</p><button class="primary" data-save="{slug}" aria-pressed="false">{t('Guardar nos favoritos','Save to favourites')}</button></div><div class="detail-art">{cover}</div></div></section><section class="guide"><h2>{t('O que explorar','What to explore')}</h2><p>{t(guide,guide_en)}</p>{f'<p><a href="/{prefix}#fotografias">{t("Créditos da fotografia","Photo credits")}</a></p>' if slug in PHOTOS else ''}<h2>{t('Localização','Location')}</h2><a href="https://www.openstreetmap.org/?mlat={lat}&amp;mlon={lon}#map=10/{lat}/{lon}">{t('Ver no OpenStreetMap ↗','View on OpenStreetMap ↗')}</a><p><a href="/{prefix}#planner">{t('Abrir planeador de viagem →','Open trip planner →')}</a></p></section>"""
         save(Path(prefix)/"destinos"/slug,page(name,summary,body,en,f"{other}destinos/{slug}/"))
     provinces="".join(f"<option>{p}</option>" for p in dict.fromkeys(row[2] for row in places))
     categories="".join(f'<button data-category-filter="{label}" aria-pressed="false" type="button">{label}</button>' for label in [t("Praia","Beach"),t("Natureza","Nature"),t("Cultura","Culture")])
     title=t("Moçambique começa aqui.","Mozambique starts here.")
     desc=t("Descubra destinos, inspire-se com novas experiências e planeie a sua próxima viagem por Moçambique.","Discover destinations, find inspiration and plan your next trip across Mozambique.")
     discovery = publish_sections(en, prefix, other, places, page, save, art)
-    body=f"""<section class="hero" id="top"><div class="scene" aria-hidden="true">{art("sea")}</div><div class="hero-copy"><small>{t("GUIA DE VIAGEM · MOÇAMBIQUE","TRAVEL GUIDE · MOZAMBIQUE")}</small><h1>{title}</h1><p>{desc}</p><a class="primary" href="#catalog">{t("Explorar destinos","Explore destinations")} ↘</a></div></section>
+    photography = gallery(en, prefix)
+    body=f"""<section class="hero" id="top"><div class="scene hero-film" aria-hidden="true"><img src="/media/poster.webp" alt="" fetchpriority="high"><video id="hero-video" data-src="/media/mozambique.mp4" poster="/media/poster.webp" muted loop playsinline preload="none" tabindex="-1"></video></div><button type="button" id="hero-video-toggle" class="video-toggle" hidden data-play="{t('Reproduzir vídeo','Play video')}" data-pause="{t('Pausar vídeo','Pause video')}">{t('Reproduzir vídeo','Play video')}</button><div class="hero-copy"><small>{t("GUIA DE VIAGEM · MOÇAMBIQUE","TRAVEL GUIDE · MOZAMBIQUE")}</small><h1>{title}</h1><p>{desc}</p><a class="primary" href="#catalog">{t("Explorar destinos","Explore destinations")} ↘</a></div></section>
+{photography}
 {discovery}
 <section class="section" id="catalog"><div class="section-title"><div><small>{t("ESCOLHA O SEU PRÓXIMO DESTINO","FIND YOUR NEXT DESTINATION")}</small><h2>{t("O que gostaria de explorar?","What would you like to explore?")}</h2></div><a href="#map">{t("Ver mapa","View map")} ↗</a></div><div class="filters"><label>{t("Pesquisar destinos","Search destinations")}<input id="search" type="search" placeholder="{t('Ex. Vilankulo','E.g. Vilankulo')}"></label><label>{t("Província","Province")}<select id="province"><option value="">{t("Todas","All")}</option>{provinces}</select></label></div><div class="chips"><button data-category-filter="" aria-pressed="true" type="button">{t("Todos","All")}</button>{categories}<button id="favorites" aria-pressed="false" type="button">♡ {t("Favoritos","Favourites")}</button></div><p id="results" role="status"></p><div class="cards">{''.join(cards)}</div></section>
 <section id="map" class="section map-section"><div><small>{t("DO LITORAL AO INTERIOR","FROM COAST TO INLAND")}</small><h2>{t("Explore pelo mapa","Explore on the map")}</h2><p>{t("Seleccione um ponto para abrir o guia do destino. O esquema acompanha os filtros do catálogo.","Select a marker to open its destination guide. The schematic follows the catalogue filters.")}</p><p><small>{t("Mapa esquemático · Localizações aproximadas","Schematic map · Approximate locations")}</small></p></div><div class="map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M59 9 90 6 87 29 75 40 60 43 46 53 42 67 26 78 23 92 15 92 13 79 21 68 18 53 27 43 3 31 11 27 40 34 49 23 50 13Z" fill="#abc6a2" stroke="#305f52" stroke-width=".5"/></svg>{''.join(pins)}</div></section>
